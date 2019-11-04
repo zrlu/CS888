@@ -900,10 +900,10 @@ namespace embree
     clickX = x; clickY = y;
 
     switch (mouseMode) {
-    case 1: camera.rotateOrbit(-0.005f*dClickX,0.005f*dClickY); break;
+	case 1: camera.rotateOrbit(-0.005f*dClickX, 0.005f*dClickY); cameraChangeCallback(); break;
     case 2: break;
-    case 3: camera.dolly(-dClickY); break;
-    case 4: camera.rotate(-0.005f*dClickX,0.005f*dClickY); break;
+    case 3: camera.dolly(-dClickY);  cameraChangeCallback(); break;
+    case 4: camera.rotate(-0.005f*dClickX,0.005f*dClickY);  cameraChangeCallback(); break;
     }
   }
 

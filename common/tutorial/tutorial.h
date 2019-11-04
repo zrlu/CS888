@@ -122,6 +122,7 @@ namespace embree
     virtual void displayFunc();
     virtual void reshapeFunc(GLFWwindow* window, int width, int height);
     virtual void drawGUI() {}; 
+	virtual void cameraChangeCallback() {};
 
   public:
     std::string tutorialName;
@@ -145,9 +146,12 @@ namespace embree
     /* window settings */
     bool interactive;
     bool fullscreen;
+
+	/* my GUI control */
 	bool show_gui;
 	bool show_options;
 	bool show_stats;
+	bool should_unpause;
 
 	double mrayps;
 	double dt0;

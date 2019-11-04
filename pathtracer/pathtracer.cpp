@@ -53,11 +53,18 @@ namespace embree
       }
     }
 
+	void cameraChangeCallback()
+	{
+		g_spp = 1;
+		g_pause = 0;
+		g_accumulate = 1;
+		g_max_path_length = 5;
+	}
+
     void drawGUI()
     {
 	  if (ImGui::Button("Render!"))
 	  {
-		g_accumulate = 0;
 		g_pause = 1;
 	    doRender();
 	  }
