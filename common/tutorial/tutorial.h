@@ -151,7 +151,6 @@ namespace embree
 	bool show_gui;
 	bool show_options;
 	bool show_stats;
-	bool should_unpause;
 
 	double mrayps;
 	double dt0;
@@ -177,6 +176,7 @@ namespace embree
 	double render_time_last;
     Averaged<double> avg_frame_time;
     Averaged<double> avg_mrayps;
+	double tot_mray;
     bool print_camera;
 
     int debug0;

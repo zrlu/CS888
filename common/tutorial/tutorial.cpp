@@ -36,6 +36,7 @@
 #include "../image/image.h"
 
 extern "C" bool g_pause;
+extern "C" bool g_accumulate;
 
 namespace embree
 {
@@ -129,6 +130,7 @@ namespace embree
 	  render_time_last(0.0),
       avg_frame_time(64,1.0),
       avg_mrayps(64,1.0),
+	  tot_mray(0),
       print_camera(false),
 
       debug0(0),
@@ -923,13 +925,19 @@ namespace embree
 	  avg_render_time.add(dt0);
 	  render_time_last = dt0 < 0.0001 ? render_time_last : dt0;
 	  mrayps = double(getNumRays()) / (1000000.0*dt0);
+	  tot_mray += double(getNumRays()) / 1000000.0;
 	  avg_mrayps.add(mrayps);
 
   }
 
   void TutorialApplication::displayFunc()
   {
-	if (!g_pause) {
+	if (!g_pause)
+	{
+		if (!g_accumulate)
+		{
+			tot_mray = 0;
+		}
 		doRender();
 	}
 
@@ -976,7 +984,8 @@ namespace embree
 			ImGui::Text("%3.2f Mray/s", avg_mrayps.get());
 #endif
 			}
-			ImGui::Text("duration: %4.3f s", render_time_last);
+			ImGui::Text("%3.2f Mray", tot_mray);
+			ImGui::Text("%4.3f spf", render_time_last);
 			ImGui::End();
 		}
 
@@ -1020,7 +1029,7 @@ namespace embree
       stream << dt1*1000.0f << " ms, ";
       stream << width << "x" << height << " pixels";
       std::cout << stream.str() << std::endl;
-    } 
+    }
   }
 
   void TutorialApplication::reshapeFunc(GLFWwindow* window, int, int)

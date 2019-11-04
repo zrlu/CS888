@@ -57,8 +57,8 @@ namespace embree
 	{
 		g_spp = 1;
 		g_pause = 0;
-		g_accumulate = 1;
 		g_max_path_length = 5;
+		tot_mray = 0;
 	}
 
     void drawGUI()
@@ -66,11 +66,14 @@ namespace embree
 	  if (ImGui::Button("Render!"))
 	  {
 		g_pause = 1;
+		if (!g_accumulate)
+		{
+			tot_mray = 0;
+		}
 	    doRender();
 	  }
       if (ImGui::Checkbox("pause", &g_pause))
 	  {
-		  g_accumulate = 1;
 		  g_spp = 1;
 		  g_max_path_length = 5;
 	  }
