@@ -930,6 +930,7 @@ namespace embree
 
   }
 
+
   void TutorialApplication::displayFunc()
   {
 	if (!g_pause)
@@ -978,11 +979,14 @@ namespace embree
 			ImGui::Begin("Stats", &show_stats, 0);
 			if (!g_pause)
 			{
+				ImGui::Text("Free Mode");
 				ImGui::Text("%3.2f fps", 1.0f / avg_render_time.get());
-				
 #if defined(RAY_STATS)
 			ImGui::Text("%3.2f Mray/s", avg_mrayps.get());
 #endif
+			}
+			else {
+				ImGui::Text("Paused");
 			}
 			ImGui::Text("%3.2f Mray", tot_mray);
 			ImGui::Text("%4.3f spf", render_time_last);
