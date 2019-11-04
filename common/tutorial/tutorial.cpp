@@ -35,6 +35,8 @@
 #include "../scenegraph/xml_loader.h"
 #include "../image/image.h"
 
+extern "C" bool g_pause;
+
 namespace embree
 {
   extern "C"
@@ -108,7 +110,6 @@ namespace embree
 	  show_gui(true),
 	  show_stats(true),
 	  show_options(true),
-	  pause(false),
 
 	  window_width(512),
 	  window_height(512),
@@ -794,6 +795,7 @@ namespace embree
       }
       else
       {
+#define MULTIPLIER 10.0f
         switch (key) {
         case GLFW_KEY_LEFT      : camera.rotate(-0.02f,0.0f); break;
         case GLFW_KEY_RIGHT     : camera.rotate(+0.02f,0.0f); break;
@@ -802,10 +804,10 @@ namespace embree
         case GLFW_KEY_PAGE_UP   : speed *= 1.2f; break;
         case GLFW_KEY_PAGE_DOWN : speed /= 1.2f; break;
 
-        case GLFW_KEY_W : moveDelta.z = +1.0f; break;
-        case GLFW_KEY_S : moveDelta.z = -1.0f; break;
-        case GLFW_KEY_A : moveDelta.x = -1.0f; break;
-        case GLFW_KEY_D : moveDelta.x = +1.0f; break;
+        case GLFW_KEY_W : moveDelta.z = +1.0f * MULTIPLIER; break;
+        case GLFW_KEY_S : moveDelta.z = -1.0f * MULTIPLIER; break;
+        case GLFW_KEY_A : moveDelta.x = -1.0f * MULTIPLIER; break;
+        case GLFW_KEY_D : moveDelta.x = +1.0f * MULTIPLIER; break;
           
         case GLFW_KEY_F :
           glfwDestroyWindow(window);
@@ -825,7 +827,6 @@ namespace embree
           
 		case GLFW_KEY_C: std::cout << camera.str() << std::endl; break;
 		case GLFW_KEY_G: show_gui = !show_gui; break;
-		case GLFW_KEY_R: pause = !pause; break;
         case GLFW_KEY_HOME: g_debug=clamp(g_debug+0.01f); PRINT(g_debug); break;
         case GLFW_KEY_END : g_debug=clamp(g_debug-0.01f); PRINT(g_debug); break;
           
@@ -906,29 +907,34 @@ namespace embree
     }
   }
 
+  void TutorialApplication::doRender()
+  {
+	  /* update camera */
+	  camera.move(moveDelta.x*speed, moveDelta.y*speed, moveDelta.z*speed);
+	  ISPCCamera ispccamera = camera.getISPCCamera(width, height, true);
+	  if (print_camera)
+		  std::cout << camera.str() << std::endl;
+
+	  /* render image using ISPC */
+	  initRayStats();
+	  t0 = getSeconds();
+	  device_render(pixels, width, height, float(time0 - t0), ispccamera);
+	  dt0 = getSeconds() - t0;
+	  avg_render_time.add(dt0);
+	  render_time_last = dt0 < 0.0001 ? render_time_last : dt0;
+	  mrayps = double(getNumRays()) / (1000000.0*dt0);
+	  avg_mrayps.add(mrayps);
+
+  }
+
   void TutorialApplication::displayFunc()
   {
-    /* update camera */
-    camera.move(moveDelta.x*speed, moveDelta.y*speed, moveDelta.z*speed);
-    ISPCCamera ispccamera = camera.getISPCCamera(width,height,true);
-     if (print_camera)
-      std::cout << camera.str() << std::endl;
-
-    /* render image using ISPC */
-    initRayStats();
-    double t0 = getSeconds();
-	if (!pause)
-	{
-		device_render(pixels, width, height, float(time0 - t0), ispccamera);
+	if (!g_pause) {
+		doRender();
 	}
-    double dt0 = getSeconds()-t0;
-    avg_render_time.add(dt0);
-	render_time_last = dt0 < 0.0001 ? render_time_last : dt0;
-    double mrayps = double(getNumRays())/(1000000.0*dt0);
-    avg_mrayps.add(mrayps);
 
-    /* draw pixels to screen */
-    glDrawPixels(width,height,GL_RGBA,GL_UNSIGNED_BYTE,pixels);
+	/* draw pixels to screen */
+	glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
 	if (show_gui) {
 		ImGui_ImplGlfwGL2_NewFrame();
@@ -949,29 +955,29 @@ namespace embree
 			{
 				ImGui::MenuItem("Stats", 0, &show_stats);
 				ImGui::MenuItem("Options", 0, &show_options);
+				ImGui::MenuItem("Show GUI (G)", 0, &show_gui);
 				ImGui::EndMenu();
 			}
 			ImGui::EndMainMenuBar();
-			if (show_options)
+		}
+		if (show_options)
+		{
+			ImGui::Begin("Options", &show_options, 0);
+			drawGUI();
+			ImGui::End();
+		}
+		if (show_stats) {
+			ImGui::Begin("Stats", &show_stats, 0);
+			if (!g_pause)
 			{
-				ImGui::Begin("Options", &show_options, ImVec2(100, 200), 0.3f, 0);
-				ImGui::Checkbox("Pause", &pause);
-				drawGUI();
-				ImGui::End();
-			}
-			if (show_stats) {
-				ImGui::Begin("Stats", &show_stats, 0);
-				if (!pause)
-				{
-					ImGui::Text("%3.2f fps", 1.0f / avg_render_time.get());
+				ImGui::Text("%3.2f fps", 1.0f / avg_render_time.get());
 				
 #if defined(RAY_STATS)
-				ImGui::Text("%3.2f Mray/s", avg_mrayps.get());
+			ImGui::Text("%3.2f Mray/s", avg_mrayps.get());
 #endif
-				}
-				ImGui::Text("duration: %4.3f s", render_time_last);
-				ImGui::End();
 			}
+			ImGui::Text("duration: %4.3f s", render_time_last);
+			ImGui::End();
 		}
 
 		//ImGui::ShowDemoWindow();

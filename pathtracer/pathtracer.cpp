@@ -19,10 +19,11 @@
 namespace embree
 {
   extern "C" {
-    int g_spp = 4;
+    int g_spp = 1;
     int g_max_path_length = 5;
     bool g_accumulate = 1;
 	int g_sampler = 0;
+	bool g_pause = 0;
   }
   
   struct Tutorial : public SceneLoadingTutorialApplication
@@ -54,9 +55,28 @@ namespace embree
 
     void drawGUI()
     {
+	  if (ImGui::Button("Render!"))
+	  {
+		g_accumulate = 0;
+		g_pause = 1;
+	    doRender();
+	  }
+      if (ImGui::Checkbox("pause", &g_pause))
+	  {
+		  g_accumulate = 1;
+		  g_spp = 1;
+		  g_max_path_length = 5;
+	  }
       ImGui::Checkbox("accumulate",&g_accumulate);
-      ImGui::DragInt("##max_path_length",&g_max_path_length,1.0f,1,16, "max_path_length=%.0f");
-      ImGui::DragInt("##spp",&g_spp,1.0f,1,16,"spp=%.0f");
+	  if (ImGui::DragInt("##max_path_length", &g_max_path_length, 1.0f, 1, 16, "max_path_length=%.0f"))
+	  {
+		  g_pause = 1;
+	  }
+	  if (ImGui::DragInt("##spp", &g_spp, 1.0f, 1, 256, "spp=%.0f"))
+	  {
+		  g_pause = 1;
+	  }
+
 	  ImGui::Text("sampler");
 	  const char* items[] = { "default", "blue_noise" };
 	  const char* current_item = items[g_sampler];

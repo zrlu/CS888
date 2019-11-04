@@ -118,6 +118,7 @@ namespace embree
     virtual void keyboardFunc(GLFWwindow* window, int key, int scancode, int action, int mods);
     virtual void clickFunc(GLFWwindow* window, int button, int action, int mods);
     virtual void motionFunc(GLFWwindow* window, double x, double y);
+	void doRender();
     virtual void displayFunc();
     virtual void reshapeFunc(GLFWwindow* window, int width, int height);
     virtual void drawGUI() {}; 
@@ -147,7 +148,10 @@ namespace embree
 	bool show_gui;
 	bool show_options;
 	bool show_stats;
-	bool pause;
+
+	double mrayps;
+	double dt0;
+	double t0;
 
     unsigned window_width;
     unsigned window_height;

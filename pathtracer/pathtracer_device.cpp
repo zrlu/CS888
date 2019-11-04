@@ -42,6 +42,7 @@ namespace embree {
 extern "C" int g_spp;
 extern "C" int g_max_path_length;
 extern "C" bool g_accumulate;
+extern "C" int g_sampler;
 
 bool g_subdiv_mode = false;
 unsigned int keyframeID = 0;
@@ -1814,7 +1815,15 @@ extern "C" void device_init (char* cfg)
   g_accu_p  = Vec3fa(0.0f);
 
   /* set start render mode */
-  renderTile = renderTileStandard;
+  switch (g_sampler)
+  {
+	case 0:
+		renderTile = renderTileStandard;
+		break;
+	case 1:
+		renderTile = renderTileStandard;
+		break;
+  }
   key_pressed_handler = device_key_pressed_handler;
 
 } // device_init
