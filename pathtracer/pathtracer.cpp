@@ -23,7 +23,6 @@ namespace embree
     int g_max_path_length = 5;
     bool g_accumulate = 1;
 	int g_sampler = 0;
-	extern bool g_pause;
   }
   
   struct Tutorial : public SceneLoadingTutorialApplication
@@ -56,14 +55,27 @@ namespace embree
     void drawGUI()
     {
       ImGui::Checkbox("accumulate",&g_accumulate);
-
-      ImGui::DragInt("max_path_length",&g_max_path_length,1.0f,1,16);
-
-      ImGui::DragInt("spp",&g_spp,1.0f,1,16);
-
-	  ImGui::Text("Sampling Options");
-	  ImGui::RadioButton("default", true);
-	  ImGui::RadioButton("blue noise", false);
+      ImGui::DragInt("##max_path_length",&g_max_path_length,1.0f,1,16, "max_path_length=%.0f");
+      ImGui::DragInt("##spp",&g_spp,1.0f,1,16,"spp=%.0f");
+	  ImGui::Text("sampler");
+	  const char* items[] = { "default", "blue_noise" };
+	  const char* current_item = items[g_sampler];
+	  if (ImGui::BeginCombo("##sampler", current_item)) // The second parameter is the label previewed before opening the combo.
+	  {
+		  for (int i = 0; i < IM_ARRAYSIZE(items); i++)
+		  {
+			  bool is_selected = (current_item == items[i]); // You can store your selection however you want, outside or inside your objects
+			  if (ImGui::Selectable(items[i], is_selected))
+			  {
+				g_sampler = i;
+				if (is_selected)
+				{
+					ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+				}
+			  }
+		  }
+		  ImGui::EndCombo();
+	  }
     }
   };
 
