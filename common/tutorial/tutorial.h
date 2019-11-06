@@ -129,6 +129,7 @@ namespace embree
 
     /* render settings */
     Camera camera;
+	Camera camera_init;
     Shader shader;
 
     /* framebuffer settings */

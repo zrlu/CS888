@@ -20,6 +20,7 @@ namespace embree
 {
   extern "C" {
     int g_spp = 1;
+	int g_spp_option = 0;
     int g_max_path_length = 5;
     bool g_accumulate = 1;
 	int g_sampler = 0;
@@ -55,15 +56,21 @@ namespace embree
 
 	void cameraChangeCallback()
 	{
-		g_spp = 1;
-		g_pause = 0;
-		g_max_path_length = 5;
+		unpause();
 		tot_mray = 0;
+		g_pause = 0;
+	}
+
+	void unpause()
+	{
+		g_spp = 1;
+		g_spp_option = 0;
+		g_max_path_length = 5;
 	}
 
     void drawGUI()
     {
-	  if (ImGui::Button("Render!"))
+	  if (ImGui::Button("Render Frame"))
 	  {
 		g_pause = 1;
 		if (!g_accumulate)
@@ -72,36 +79,60 @@ namespace embree
 		}
 	    doRender();
 	  }
-      if (ImGui::Checkbox("pause", &g_pause))
+	  ImGui::SameLine();
+	  if (ImGui::Button(g_pause ? "Unpause" : "Pause"))
 	  {
-		  g_spp = 1;
-		  g_max_path_length = 5;
+		  g_pause = !g_pause;
+		  if (g_pause)
+		  {
+			  unpause();
+		  }
+	  }
+	  ImGui::SameLine();
+	  if (ImGui::Button("Reset Camera"))
+	  {
+		  camera = camera_init;
 	  }
       ImGui::Checkbox("accumulate",&g_accumulate);
 	  if (ImGui::DragInt("##max_path_length", &g_max_path_length, 1.0f, 1, 16, "max_path_length=%.0f"))
 	  {
 		  g_pause = 1;
 	  }
-	  if (ImGui::DragInt("##spp", &g_spp, 1.0f, 1, 256, "spp=%.0f"))
+	  //if (ImGui::DragInt("##spp", &g_spp, 1.0f, 1, 256, "spp=%.0f"))
+	  //{
+		 // g_pause = 1;
+	  //}
+
+	  const int spp_options[] = { 1, 2, 4, 16, 32, 64, 128, 256 };
+	  if (ImGui::BeginCombo("##spp", ("spp=" + std::to_string(spp_options[g_spp_option])).c_str()))
 	  {
-		  g_pause = 1;
+		  for (int i = 0; i < IM_ARRAYSIZE(spp_options); i++)
+		  {
+			  bool is_selected = (spp_options[g_spp_option] == g_spp);
+			  if (ImGui::Selectable(std::to_string(spp_options[i]).c_str(), is_selected))
+			  {
+				g_spp_option = i;
+			    g_spp = spp_options[i];
+				g_pause = 1;
+			  }
+		  }
+		  ImGui::EndCombo();
 	  }
 
+
 	  ImGui::Text("sampler");
-	  const char* items[] = { "default", "blue_noise" };
-	  const char* current_item = items[g_sampler];
-	  if (ImGui::BeginCombo("##sampler", current_item)) // The second parameter is the label previewed before opening the combo.
+
+	  const char* samplers[] = { "default", "blue_noise" };
+	  const char* cur_sampler = samplers[g_sampler];
+
+	  if (ImGui::BeginCombo("##sampler", cur_sampler)) // The second parameter is the label previewed before opening the combo.
 	  {
-		  for (int i = 0; i < IM_ARRAYSIZE(items); i++)
+		  for (int i = 0; i < IM_ARRAYSIZE(samplers); i++)
 		  {
-			  bool is_selected = (current_item == items[i]); // You can store your selection however you want, outside or inside your objects
-			  if (ImGui::Selectable(items[i], is_selected))
+			  bool is_selected = (cur_sampler == samplers[i]); // You can store your selection however you want, outside or inside your objects
+			  if (ImGui::Selectable(samplers[i], is_selected))
 			  {
 				g_sampler = i;
-				if (is_selected)
-				{
-					ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
-				}
 			  }
 		  }
 		  ImGui::EndCombo();

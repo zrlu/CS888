@@ -97,7 +97,7 @@ namespace embree
 
 	  shader(SHADER_DEFAULT),
 
-	  width(512),
+	  width(768),
 	  height(512),
 	  pixels(nullptr),
 
@@ -797,7 +797,7 @@ namespace embree
       }
       else
       {
-#define MULTIPLIER 10.0f
+#define MULTIPLIER 50.0f
         switch (key) {
         case GLFW_KEY_LEFT      : camera.rotate(-0.02f,0.0f); break;
         case GLFW_KEY_RIGHT     : camera.rotate(+0.02f,0.0f); break;
@@ -1285,13 +1285,15 @@ namespace embree
     if (camera_name != "") {
       Ref<SceneGraph::PerspectiveCameraNode> c = obj_scene.getCamera(camera_name);
       camera = Camera(c->from,c->to,c->up,c->fov,camera.handedness);
-    }
+	}
 
     /* otherwise use default camera */
     else if (!command_line_camera) {
       Ref<SceneGraph::PerspectiveCameraNode> c = obj_scene.getDefaultCamera();
       if (c) camera = Camera(c->from,c->to,c->up,c->fov,camera.handedness);
     }
+
+	camera_init = camera;
 
     /* send model */
     set_scene(&obj_scene);

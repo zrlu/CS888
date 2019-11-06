@@ -20,14 +20,15 @@
 #include "../common/tutorial/tutorial_device.h"
 #include "../common/tutorial/scene_device.h"
 #include "../common/tutorial/optics.h"
+#include "sampling_bluenoise.h"
 
 namespace embree {
 
 #undef TILE_SIZE_X
 #undef TILE_SIZE_Y
 
-#define TILE_SIZE_X 4
-#define TILE_SIZE_Y 4
+#define TILE_SIZE_X 128
+#define TILE_SIZE_Y 128
 
 #define FIXED_SAMPLING 0
 
@@ -1689,13 +1690,36 @@ Vec3fa renderPixelStandard(float x, float y, const ISPCCamera& camera, RayStats&
   {
     RandomSampler_init(sampler, (int)x, (int)y, g_accu_count*g_spp+i);
 
+	float fx, fy;
     /* calculate pixel color */
-    float fx = x + RandomSampler_get1D(sampler);
-    float fy = y + RandomSampler_get1D(sampler);
+	fx = x + RandomSampler_get1D(sampler);
+	fy = y + RandomSampler_get1D(sampler);
+
     L = L + renderPixelFunction(fx,fy,sampler,camera,stats);
   }
   L = L/(float)g_spp;
   return L;
+}
+
+Vec3fa renderPixelBlueNoise(float x, float y, int i, int j, int index, const ISPCCamera& camera, RayStats& stats)
+{
+	RandomSampler sampler;
+
+	Vec3fa L = Vec3fa(0.0f);
+
+	for (int i = 0; i < g_spp; i++)
+	{
+		float fx, fy;
+		/* calculate pixel color */
+		fx = x + samplerBlueNoiseErrorDistribution(i, j, index, 0, g_spp);
+		fy = y + samplerBlueNoiseErrorDistribution(i, j, index, 1, g_spp);
+
+		RandomSampler_init(sampler, (int)x, (int)y, g_accu_count*g_spp + i);
+
+		L = L + renderPixelFunction(fx, fy, sampler, camera, stats);
+	}
+	L = L / (float)g_spp;
+	return L;
 }
 
 /* renders a single screen tile */
@@ -1716,11 +1740,24 @@ void renderTileStandard(int taskIndex,
   const unsigned int y0 = tileY * TILE_SIZE_Y;
   const unsigned int y1 = min(y0+TILE_SIZE_Y,height);
 
+  //std::cout << numTilesX << " " << numTilesY << std::endl;
+  //std::cout << TILE_SIZE_X << " " << TILE_SIZE_Y << std::endl;
+  //std::cout << width << "" << height << " " << numTilesX << " " << numTilesY << " "<< std::endl;
+
   for (unsigned int y=y0; y<y1; y++) for (unsigned int x=x0; x<x1; x++)
   {
     /* calculate pixel color */
-    Vec3fa color = renderPixelStandard((float)x,(float)y,camera,g_stats[threadIndex]);
+	Vec3fa color;
 
+	if (g_sampler == 0)
+	{
+		color = renderPixelStandard((float)x, (float)y, camera, g_stats[threadIndex]);
+	}
+	if (g_sampler == 1)
+	{
+		color = renderPixelBlueNoise((float)x, (float)y, (y-y0)*TILE_SIZE_Y+(x-x0), x, y, camera, g_stats[threadIndex]);
+	}
+	
     /* write color to framebuffer */
     Vec3fa accu_color = g_accu[y*width+x] + Vec3fa(color.x,color.y,color.z,1.0f); g_accu[y*width+x] = accu_color;
     float f = rcp(max(0.001f,accu_color.w));
@@ -1815,15 +1852,9 @@ extern "C" void device_init (char* cfg)
   g_accu_p  = Vec3fa(0.0f);
 
   /* set start render mode */
-  switch (g_sampler)
-  {
-	case 0:
-		renderTile = renderTileStandard;
-		break;
-	case 1:
-		renderTile = renderTileStandard;
-		break;
-  }
+
+  renderTile = renderTileStandard;
+  
   key_pressed_handler = device_key_pressed_handler;
 
 } // device_init
